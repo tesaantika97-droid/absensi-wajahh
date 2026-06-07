@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi Wajah Modern - Sistem Presensi Digital</title>
+    <meta name="description" content="Sistem absensi berbasis deteksi wajah modern, cepat, dan responsif. Terintegrasi dengan Google Spreadsheet.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <div class="logo-icon">AW</div>
+                <div class="logo-text">
+                    <h1>ABSENSI WAJAH</h1>
+                    <p>Sistem Presensi Digital Kampus & Kantor</p>
+                </div>
+            </div>
+            <div class="live-time">
+                <div id="ticker-date">Minggu, 7 Juni 2026</div>
+                <div id="ticker-clock">14:17:00</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main>
+        
+        <!-- Left Column: Camera and Form Inputs -->
+        <section class="card" aria-labelledby="absensi-panel-title">
+            <h2 id="absensi-panel-title" class="card-title">
+                Ambil Absensi
+                <span class="badge">Live</span>
+            </h2>
+            
+            <form id="absensi-form" onsubmit="event.preventDefault();">
+                <!-- Name Input -->
+                <div class="form-group">
+                    <label for="student-name">Nama Lengkap Mahasiswa / Pegawai</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v-2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        </span>
+                        <input type="text" id="student-name" class="form-input" placeholder="Masukkan nama lengkap..." required autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- Camera Stream & Frame -->
+                <div class="form-group">
+                    <label>Preview Kamera Wajah</label>
+                    <div class="camera-container" id="camera-box">
+                        <!-- Video stream (starts hidden, toggled by JS) -->
+                        <video id="camera-stream" autoplay playsinline muted style="display: none;"></video>
+                        
+                        <!-- REC blinking badge -->
+                        <div class="camera-rec-badge" id="camera-rec-badge" style="display: none;">
+                            <span class="rec-dot"></span><span>REC</span>
+                        </div>
+
+                        <!-- Scanning Line laser -->
+                        <div class="camera-scan-line" id="camera-scan-line"></div>
+
+                        <!-- Shutter flash animation layer -->
+                        <div class="shutter-flash" id="shutter-flash"></div>
+                        
+                        <!-- Placeholder before camera is active -->
+                        <div class="camera-placeholder" id="camera-placeholder">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                            <p>Kamera belum aktif</p>
+                        </div>
+
+                        <!-- Face placement guide overlay -->
+                        <div class="camera-overlay">
+                            <div class="camera-guide-oval"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sound Toggle Switch -->
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: -0.5rem; margin-bottom: 1.25rem; font-size: 0.875rem; color: var(--color-brown-medium);">
+                        <input type="checkbox" id="shutter-sound-toggle" checked style="accent-color: var(--color-primary); width: 16px; height: 16px; cursor: pointer;">
+                        <label for="shutter-sound-toggle" style="cursor: pointer; font-weight: 500; margin-bottom: 0; user-select: none;">Aktifkan Suara Kamera</label>
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="btn-group btn-group-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <button type="button" id="btn-toggle-camera" class="btn btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                        Aktifkan Kamera
+                    </button>
+                    
+                    <button type="button" id="btn-capture" class="btn btn-outline" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                        Ambil Foto
+                    </button>
+                </div>
+
+                <button type="submit" id="btn-submit-attendance" class="btn btn-primary" style="width: 100%;" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Absen Masuk
+                </button>
+            </form>
+
+            <!-- Configuration / Google Apps Script Setup Collapsible Section -->
+            <div class="settings-section">
+                <div class="settings-toggle" id="settings-toggle">
+                    <span>Pengaturan Google Apps Script</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <div class="settings-content" id="settings-content">
+                    <div class="form-group" style="margin-top: 1rem; margin-bottom: 1rem;">
+                        <label for="script-url">Web App URL (Google Apps Script)</label>
+                        <input type="url" id="script-url" class="form-input" style="padding-left: 1rem;" placeholder="https://script.google.com/macros/s/.../exec">
+                        <small style="color: var(--color-text-muted); font-size: 0.75rem; display: block; margin-top: 0.5rem;">
+                            Hubungkan ke Google Sheet Anda untuk menyimpan data absensi.
+                        </small>
+                    </div>
+                    <button type="button" id="btn-save-settings" class="btn btn-outline" style="width: 100%; padding: 0.5rem 1rem; font-size: 0.875rem;">
+                        Simpan Konfigurasi
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Captured Preview & History Logs -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            
+            <!-- Snapshot Preview Box -->
+            <section class="card" aria-labelledby="preview-panel-title">
+                <h2 id="preview-panel-title" class="card-title">Foto Terpilih</h2>
+                <div class="snapshot-preview-box" id="snapshot-preview-box">
+                    <!-- Placeholder or dynamic image -->
+                    <div id="snapshot-placeholder" style="text-align: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; margin-bottom: 0.5rem;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        <p style="font-size: 0.875rem;">Belum ada foto yang diambil</p>
+                    </div>
+                    <img id="snapshot-img" src="" alt="Foto Absen" style="display: none;">
+                </div>
+            </section>
+
+            <!-- Attendance Logs History -->
+            <section class="card" style="flex-grow: 1;" aria-labelledby="history-panel-title">
+                <h2 id="history-panel-title" class="card-title">
+                    Riwayat Hari Ini
+                    <span class="badge" id="log-count">0</span>
+                </h2>
+
+                <!-- Dashboard Stats Counters -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-label">Total</span>
+                        <span class="stat-val" id="stat-total">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Sukses</span>
+                        <span class="stat-val success" id="stat-sukses">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Simulasi</span>
+                        <span class="stat-val pending" id="stat-simulasi">0</span>
+                    </div>
+                </div>
+
+                <!-- Table Filters & Actions -->
+                <div class="table-actions">
+                    <div class="input-wrapper" style="flex-grow: 1;">
+                        <span class="input-icon" style="left: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </span>
+                        <input type="text" id="log-search" class="form-input search-input" style="padding-left: 2.25rem; padding-top: 0.5rem; padding-bottom: 0.5rem; border-radius: var(--radius-sm);" placeholder="Cari mahasiswa...">
+                    </div>
+                    <button type="button" id="btn-export-csv" class="btn btn-outline btn-sm" style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Ekspor CSV
+                    </button>
+                </div>
+                
+                <div class="history-container">
+                    <table class="log-table" id="log-table">
+                        <thead>
+                            <tr>
+                                <th>Foto</th>
+                                <th>Nama</th>
+                                <th>Waktu</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-tbody">
+                            <!-- Populated dynamically -->
+                            <tr>
+                                <td colspan="4" class="empty-state">Belum ada absensi untuk hari ini.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Modal for Zooming Photos -->
+    <div class="modal" id="image-modal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Detail Foto Wajah</h3>
+                <button type="button" class="toast-close" onclick="closeModal()" aria-label="Close modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <img id="modal-zoom-img" src="" alt="Detail Wajah">
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" aria-live="polite"></div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Absensi Wajah Modern. Crafted with elegance and precision. <br>Teknologi HTML5, CSS3, dan JavaScript murni.</p>
+    </footer>
+
+    <!-- JavaScript logic -->
+    <script src="app.js"></script>
+</body>
+</html>
